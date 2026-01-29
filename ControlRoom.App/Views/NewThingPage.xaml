@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="ControlRoom.App.Views.NewThingPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ControlRoom.App.ViewModels"
+    x:DataType="vm:NewThingViewModel"
+    Title="New Thing">
+
+    <ScrollView Padding="16">
+        <VerticalStackLayout Spacing="16" MaximumWidthRequest="600">
+            <Label Text="Add a Local Script" FontSize="24" FontAttributes="Bold" />
+            <Label Text="Point to a script file (.ps1, .py, .cmd, .bat, .sh) and give it a name" Opacity="0.7" />
+
+            <!-- Name -->
+            <VerticalStackLayout Spacing="4">
+                <Label Text="Name" FontSize="14" FontAttributes="Bold" />
+                <Entry
+                    Text="{Binding Name}"
+                    Placeholder="e.g. Build Project, Run Tests, Start Server" />
+            </VerticalStackLayout>
+
+            <!-- Script Path -->
+            <VerticalStackLayout Spacing="4">
+                <Label Text="Script Path" FontSize="14" FontAttributes="Bold" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <Entry
+                        Text="{Binding ScriptPath}"
+                        Placeholder="C:\path\to\script.ps1" />
+                    <Button Grid.Column="1" Text="Browse..." Command="{Binding BrowseScriptCommand}" />
+                </Grid>
+            </VerticalStackLayout>
+
+            <!-- Working Directory -->
+            <VerticalStackLayout Spacing="4">
+                <Label Text="Working Directory (optional)" FontSize="14" FontAttributes="Bold" />
+                <Entry
+                    Text="{Binding WorkingDirectory}"
+                    Placeholder="Defaults to script's directory" />
+            </VerticalStackLayout>
+
+            <!-- Profiles Section -->
+            <Border Padding="12" StrokeShape="RoundRectangle 8" BackgroundColor="#1a1a1a">
+                <VerticalStackLayout Spacing="12">
+                    <!-- Profiles Header -->
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                        <HorizontalStackLayout Spacing="8">
+                            <Label Text="Run Profiles" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />
+                            <Label Text="{Binding Profiles.Count, StringFormat='({0})'}" Opacity="0.6" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                        <Button
+                            Grid.Column="1"
+                            Text="+ Add"
+                            FontSize="12"
+                            Padding="8,4"
+                            Command="{Binding AddProfileCommand}"
+                            BackgroundColor="#333333" />
+                        <Button
+                            Grid.Column="2"
+                            Text="{Binding ShowProfiles, Converter={StaticResource BoolToExpandIcon}}"
+                            FontSize="14"
+                            Padding="8,4"
+                            Command="{Binding ToggleProfilesCommand}"
+                            BackgroundColor="Transparent" />
+                    </Grid>
+
+                    <Label
+                        Text="Define preset argument/environment combinations (e.g., Smoke, Full, Debug)"
+                        FontSize="12"
+                        Opacity="0.5"
+                        IsVisible="{Binding ShowProfiles, Converter={StaticResource InvertedBool}}" />
+
+                    <!-- Profiles List (collapsible) -->
+                    <VerticalStackLayout Spacing="8" IsVisible="{Binding ShowProfiles}">
+                        <CollectionView ItemsSource="{Binding Profiles}">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ProfileEditorItem">
+                                    <Border Padding="12" Margin="0,4" StrokeShape="RoundRectangle 6" BackgroundColor="#252525">
+                                        <VerticalStackLayout Spacing="8">
+                                            <!-- Profile Name + Remove -->
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <Entry
+                                                    Text="{Binding Name}"
+                                                    Placeholder="Profile name"
+                                                    FontSize="14"
+                                                    FontAttributes="Bold" />
+                                                <Button
+                                                    Grid.Column="1"
+                                                    Text="×"
+                                                    FontSize="16"
+                                                    Padding="8,2"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="#FF6B6B"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:NewThingViewModel}}, Path=RemoveProfileCommand}"
+                                                    CommandParameter="{Binding .}" />
+                                            </Grid>
+
+                                            <!-- Args -->
+                                            <VerticalStackLayout Spacing="2">
+                                                <Label Text="Arguments" FontSize="11" Opacity="0.6" />
+                                                <Entry
+                                                    Text="{Binding Args}"
+                                                    Placeholder="--verbose --config=prod"
+                                                    FontSize="13" />
+                                            </VerticalStackLayout>
+
+                                            <!-- Environment Variables -->
+                                            <VerticalStackLayout Spacing="2">
+                                                <Label Text="Environment (KEY=value, one per line)" FontSize="11" Opacity="0.6" />
+                                                <Editor
+                                                    Text="{Binding Env}"
+                                                    Placeholder="DEBUG=1&#10;API_URL=https://..."
+                                                    HeightRequest="60"
+                                                    FontSize="12"
+                                                    AutoSize="TextChanges" />
+                                            </VerticalStackLayout>
+
+                                            <!-- Working Dir Override -->
+                                            <VerticalStackLayout Spacing="2">
+                                                <Label Text="Working Dir Override (optional)" FontSize="11" Opacity="0.6" />
+                                                <Entry
+                                                    Text="{Binding WorkingDir}"
+                                                    Placeholder="Leave empty to use Thing's default"
+                                                    FontSize="13" />
+                                            </VerticalStackLayout>
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Error Message -->
+            <Label
+                Text="{Binding ErrorMessage}"
+                TextColor="Red"
+                IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBool}}" />
+
+            <!-- Actions -->
+            <HorizontalStackLayout Spacing="12" HorizontalOptions="End">
+                <Button Text="Cancel" Command="{Binding CancelCommand}" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=Black, Dark=White}" />
+                <Button Text="Save Thing" Command="{Binding SaveCommand}" IsEnabled="{Binding CanSave}" />
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

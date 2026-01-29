@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="ControlRoom.App.Views.RunDetailPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ControlRoom.App.ViewModels"
+    xmlns:queries="clr-namespace:ControlRoom.Infrastructure.Storage.Queries;assembly=ControlRoom.Infrastructure"
+    x:DataType="vm:RunDetailViewModel"
+    Title="{Binding Header}">
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="16">
+        <!-- Header -->
+        <Grid ColumnDefinitions="*,Auto">
+            <VerticalStackLayout Spacing="4">
+                <HorizontalStackLayout Spacing="12">
+                    <Label Text="{Binding Header}" FontSize="20" FontAttributes="Bold" VerticalOptions="Center" />
+                    <ActivityIndicator IsRunning="{Binding IsRunning}" IsVisible="{Binding IsRunning}" WidthRequest="20" HeightRequest="20" />
+                </HorizontalStackLayout>
+                <Label
+                    Text="{Binding SummaryText}"
+                    FontSize="14"
+                    Opacity="0.7"
+                    IsVisible="{Binding IsRunning, Converter={StaticResource InvertedBool}}" />
+                <!-- Command line (if available) -->
+                <Label
+                    Text="{Binding CommandLineText}"
+                    FontSize="11"
+                    FontFamily="Consolas"
+                    Opacity="0.5"
+                    LineBreakMode="TailTruncation"
+                    IsVisible="{Binding CommandLineText, Converter={StaticResource StringToBool}}" />
+            </VerticalStackLayout>
+
+            <!-- Actions -->
+            <HorizontalStackLayout Grid.Column="1" Spacing="8">
+                <Button
+                    Text="📋 Copy"
+                    Command="{Binding CopySummaryCommand}"
+                    FontSize="12"
+                    Padding="10,6"
+                    IsVisible="{Binding IsRunning, Converter={StaticResource InvertedBool}}" />
+                <Button
+                    Text="📁 Open Folder"
+                    Command="{Binding OpenRunFolderCommand}"
+                    FontSize="12"
+                    Padding="10,6" />
+                <Button
+                    Text="📦 Export ZIP"
+                    Command="{Binding ExportAsZipCommand}"
+                    FontSize="12"
+                    Padding="10,6"
+                    IsVisible="{Binding IsRunning, Converter={StaticResource InvertedBool}}" />
+            </HorizontalStackLayout>
+        </Grid>
+
+        <!-- Main content - split into log and artifacts when there are artifacts -->
+        <Grid Grid.Row="1" Margin="0,12,0,0" RowDefinitions="*,Auto">
+            <!-- Log Output -->
+            <Border Padding="12" BackgroundColor="#1E1E1E" StrokeShape="RoundRectangle 8">
+                <CollectionView ItemsSource="{Binding Lines}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:LogLine">
+                            <HorizontalStackLayout Spacing="8" Padding="0,2">
+                                <Label
+                                    Text="{Binding Timestamp, StringFormat='{0:HH:mm:ss.fff}'}"
+                                    FontFamily="Consolas"
+                                    FontSize="11"
+                                    TextColor="#666666"
+                                    WidthRequest="90" />
+                                <Label
+                                    Text="{Binding Text}"
+                                    FontFamily="Consolas"
+                                    FontSize="12"
+                                    TextColor="{Binding IsError, Converter={StaticResource ErrorToColor}}"
+                                    LineBreakMode="TailTruncation" />
+                            </HorizontalStackLayout>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </Border>
+
+            <!-- Artifacts Panel -->
+            <Border
+                Grid.Row="1"
+                Margin="0,12,0,0"
+                Padding="12"
+                IsVisible="{Binding HasArtifacts}"
+                StrokeShape="RoundRectangle 8">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Artifacts" FontSize="14" FontAttributes="Bold" />
+                    <CollectionView ItemsSource="{Binding Artifacts}" HeightRequest="120">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="queries:ArtifactListItem">
+                                <Border
+                                    Padding="12"
+                                    WidthRequest="180"
+                                    StrokeShape="RoundRectangle 6"
+                                    BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2D2D2D}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:RunDetailViewModel}}, Path=OpenArtifactCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Border.GestureRecognizers>
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="{Binding FileName}" FontSize="13" FontAttributes="Bold" LineBreakMode="TailTruncation" />
+                                        <Label Text="{Binding MediaType}" FontSize="11" Opacity="0.6" />
+                                        <Label Text="{Binding FileSizeBytes, StringFormat='{0:N0} bytes'}" FontSize="11" Opacity="0.6" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

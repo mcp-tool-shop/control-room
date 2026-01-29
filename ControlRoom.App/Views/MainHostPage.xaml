@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="ControlRoom.App.Views.MainHostPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:ControlRoom.App.Views"
+    xmlns:vm="clr-namespace:ControlRoom.App.ViewModels"
+    x:DataType="vm:CommandPaletteViewModel"
+    NavigationPage.HasNavigationBar="False">
+
+    <Grid>
+        <!-- The Shell (main app navigation) -->
+        <views:AppShellView x:Name="AppShell" />
+
+        <!-- Command Palette overlay -->
+        <views:CommandPaletteView
+            x:Name="CommandPalette"
+            IsVisible="{Binding IsOpen}"
+            BindingContext="{Binding}" />
+    </Grid>
+</ContentPage>

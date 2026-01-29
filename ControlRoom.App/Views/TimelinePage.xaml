@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="ControlRoom.App.Views.TimelinePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ControlRoom.App.ViewModels"
+    x:DataType="vm:TimelineViewModel"
+    Title="Timeline">
+
+    <Grid RowDefinitions="Auto,Auto,*" Padding="16">
+        <!-- Header -->
+        <HorizontalStackLayout Spacing="12">
+            <Button Text="Refresh" Command="{Binding RefreshCommand}" />
+            <Button Text="+ New Thing" Command="{Binding NewThingCommand}" />
+        </HorizontalStackLayout>
+
+        <!-- Filter Chip (visible when filtered) -->
+        <Border
+            Grid.Row="1"
+            Margin="0,8,0,0"
+            Padding="8,6"
+            StrokeShape="RoundRectangle 6"
+            BackgroundColor="#8B0000"
+            HorizontalOptions="Start"
+            IsVisible="{Binding IsFiltered}">
+            <HorizontalStackLayout Spacing="8">
+                <Label Text="{Binding FilterChipText}" FontSize="12" TextColor="#FFAAAA" VerticalOptions="Center" />
+                <Button
+                    Text="×"
+                    FontSize="14"
+                    FontAttributes="Bold"
+                    Padding="4,0"
+                    BackgroundColor="Transparent"
+                    TextColor="#FFAAAA"
+                    Command="{Binding ClearFilterCommand}"
+                    VerticalOptions="Center" />
+            </HorizontalStackLayout>
+        </Border>
+
+        <!-- Empty State -->
+        <VerticalStackLayout
+            Grid.Row="2"
+            IsVisible="{Binding Runs.Count, Converter={StaticResource IntToBoolInverter}}"
+            VerticalOptions="Center"
+            HorizontalOptions="Center"
+            Spacing="12">
+            <Label Text="No runs yet" FontSize="20" HorizontalOptions="Center" />
+            <Label Text="Add a Thing and run it to see activity here" Opacity="0.6" HorizontalOptions="Center" />
+            <Button Text="+ Add Your First Thing" Command="{Binding NewThingCommand}" />
+        </VerticalStackLayout>
+
+        <!-- Runs List -->
+        <CollectionView
+            Grid.Row="2"
+            ItemsSource="{Binding Runs}"
+            SelectionMode="Single"
+            SelectionChangedCommand="{Binding OpenRunCommand}"
+            SelectionChangedCommandParameter="{Binding SelectedItem, Source={RelativeSource Self}}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:TimelineRunItem">
+                    <Border Padding="12" Margin="0,4" StrokeShape="RoundRectangle 8">
+                        <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto,Auto,Auto">
+                            <!-- Thing Name -->
+                            <Label Text="{Binding ThingName}" FontSize="16" FontAttributes="Bold" />
+
+                            <!-- Duration Badge -->
+                            <Border
+                                Grid.Column="1"
+                                Padding="6,2"
+                                Margin="4,0"
+                                StrokeShape="RoundRectangle 4"
+                                BackgroundColor="#333333"
+                                IsVisible="{Binding HasSummary}">
+                                <Label Text="{Binding DurationText}" FontSize="11" TextColor="#AAAAAA" />
+                            </Border>
+
+                            <!-- Recurrence Badge (for failures) -->
+                            <Border
+                                Grid.Column="2"
+                                Padding="6,2"
+                                Margin="4,0"
+                                StrokeShape="RoundRectangle 4"
+                                BackgroundColor="#8B0000"
+                                IsVisible="{Binding IsRecurring}">
+                                <Label Text="{Binding RecurrenceText}" FontSize="11" TextColor="#FFAAAA" FontAttributes="Bold" />
+                            </Border>
+
+                            <!-- Status Badge -->
+                            <Border
+                                Grid.Column="3"
+                                Padding="8,4"
+                                StrokeShape="RoundRectangle 4"
+                                BackgroundColor="{Binding Status, Converter={StaticResource StatusToColor}}">
+                                <Label Text="{Binding Status}" FontSize="12" TextColor="White" />
+                            </Border>
+
+                            <!-- Bottom row: timestamp and output info -->
+                            <Label Grid.Row="1" Text="{Binding StartedAt, StringFormat='{0:g}'}" FontSize="12" Opacity="0.6" />
+                            <Label
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Grid.ColumnSpan="3"
+                                Text="{Binding OutputText}"
+                                FontSize="11"
+                                Opacity="0.5"
+                                HorizontalOptions="End"
+                                VerticalOptions="Center" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

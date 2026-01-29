@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="ControlRoom.App.Views.CommandPaletteView"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ControlRoom.App.ViewModels"
+    x:DataType="vm:CommandPaletteViewModel">
+
+    <!-- Semi-transparent backdrop -->
+    <Grid BackgroundColor="#99000000">
+        <Grid.GestureRecognizers>
+            <TapGestureRecognizer Command="{Binding CloseCommand}" />
+        </Grid.GestureRecognizers>
+
+        <!-- Palette panel -->
+        <Border
+            VerticalOptions="Start"
+            HorizontalOptions="Center"
+            Margin="0,60,0,0"
+            WidthRequest="600"
+            MaximumHeightRequest="500"
+            StrokeThickness="1"
+            Stroke="#333333"
+            BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1E1E1E}"
+            Padding="0"
+            StrokeShape="RoundRectangle 12">
+
+            <!-- Prevent backdrop tap from closing when clicking inside panel -->
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding NoopCommand}" />
+            </Border.GestureRecognizers>
+
+            <Grid RowDefinitions="Auto,Auto,*">
+                <!-- Search input -->
+                <Entry
+                    x:Name="SearchEntry"
+                    Placeholder="Type a command..."
+                    Text="{Binding Query}"
+                    FontSize="16"
+                    Margin="16,16,16,8"
+                    BackgroundColor="Transparent"
+                    ReturnCommand="{Binding ExecuteSelectedCommand}" />
+
+                <!-- Divider -->
+                <BoxView Grid.Row="1" HeightRequest="1" Color="#333333" />
+
+                <!-- Results list -->
+                <CollectionView
+                    Grid.Row="2"
+                    ItemsSource="{Binding Items}"
+                    SelectionMode="Single"
+                    SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                    Margin="8">
+
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:CommandPaletteItem">
+                            <Grid Padding="12,10" ColumnDefinitions="*,Auto">
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CommandPaletteViewModel}}, Path=ExecuteSelectedCommand}" />
+                                </Grid.GestureRecognizers>
+
+                                <Label
+                                    Text="{Binding Title}"
+                                    FontSize="14"
+                                    VerticalOptions="Center" />
+                                <Label
+                                    Grid.Column="1"
+                                    Text="{Binding Hint}"
+                                    FontSize="12"
+                                    Opacity="0.5"
+                                    VerticalOptions="Center" />
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+
+                    <!-- Empty state -->
+                    <CollectionView.EmptyView>
+                        <Label
+                            Text="No matching commands"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center"
+                            Opacity="0.5"
+                            Margin="20" />
+                    </CollectionView.EmptyView>
+                </CollectionView>
+            </Grid>
+        </Border>
+
+        <!-- Keyboard hints -->
+        <HorizontalStackLayout
+            VerticalOptions="Start"
+            HorizontalOptions="Center"
+            Margin="0,580,0,0"
+            Spacing="20">
+            <Label Text="↑↓ Navigate" FontSize="11" Opacity="0.5" TextColor="White" />
+            <Label Text="Enter Execute" FontSize="11" Opacity="0.5" TextColor="White" />
+            <Label Text="Esc Close" FontSize="11" Opacity="0.5" TextColor="White" />
+        </HorizontalStackLayout>
+    </Grid>
+</ContentView>

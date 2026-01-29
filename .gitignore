@@ -1,0 +1,69 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+!packages/repositories.config
+
+# MAUI build outputs
+*.apk
+*.aab
+*.ipa
+*.msix
+*.msixbundle
+*.appxbundle
+*.appx
+
+# macOS app bundles (in bin/obj only, not source folders)
+**/bin/**/*.app/
+**/obj/**/*.app/
+
+# Test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temp files
+*.tmp
+*.temp
+*.bak
+*~
+
+# SQLite databases (runtime data)
+*.db
+*.db-shm
+*.db-wal
+
+# Secrets
+*.pfx
+*.p12
+appsettings.local.json
+secrets.json
+.env
+.env.*

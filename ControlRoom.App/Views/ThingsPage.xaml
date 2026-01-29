@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="ControlRoom.App.Views.ThingsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:ControlRoom.App.ViewModels"
+    xmlns:queries="clr-namespace:ControlRoom.Infrastructure.Storage.Queries;assembly=ControlRoom.Infrastructure"
+    x:DataType="vm:ThingsViewModel"
+    Title="Things">
+
+    <Grid RowDefinitions="Auto,*" Padding="16">
+        <!-- Header -->
+        <HorizontalStackLayout Spacing="12">
+            <Button Text="Refresh" Command="{Binding RefreshCommand}" />
+            <Button Text="+ New Thing" Command="{Binding NewThingCommand}" />
+        </HorizontalStackLayout>
+
+        <!-- Empty State -->
+        <VerticalStackLayout
+            Grid.Row="1"
+            IsVisible="{Binding Things.Count, Converter={StaticResource IntToBoolInverter}}"
+            VerticalOptions="Center"
+            HorizontalOptions="Center"
+            Spacing="12">
+            <Label Text="No Things yet" FontSize="20" HorizontalOptions="Center" />
+            <Label Text="A Thing is something you control: a script, a server, a task" Opacity="0.6" HorizontalOptions="Center" />
+            <Button Text="+ Add Your First Thing" Command="{Binding NewThingCommand}" />
+        </VerticalStackLayout>
+
+        <!-- Things List -->
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Things}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="queries:ThingListItem">
+                    <Border Padding="12" Margin="0,4" StrokeShape="RoundRectangle 8">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="{Binding Name}" FontSize="16" FontAttributes="Bold" />
+                                <Label Text="{Binding Kind}" FontSize="12" Opacity="0.6" />
+                            </VerticalStackLayout>
+
+                            <Button
+                                Grid.Column="1"
+                                Text="Run"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ThingsViewModel}}, Path=RunThingCommand}"
+                                CommandParameter="{Binding .}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>
