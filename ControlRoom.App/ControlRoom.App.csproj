@@ -19,17 +19,21 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>ControlRoom.App</ApplicationTitle>
+		<ApplicationTitle>Control Room</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.controlroom.app</ApplicationId>
+		<ApplicationId>com.mikeyfrilot.controlroom</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
-		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
-		<WindowsPackageType>None</WindowsPackageType>
+		<!-- Microsoft Store Packaging Configuration -->
+		<WindowsPackageType>Msix</WindowsPackageType>
+		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+		<WindowsPackageIdentityName>MikeyFrilot.ControlRoom</WindowsPackageIdentityName>
+		<WindowsPackagePublisherName>CN=mikeyfrilot</WindowsPackagePublisherName>
+		<WindowsStoreCompatible>true</WindowsStoreCompatible>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
