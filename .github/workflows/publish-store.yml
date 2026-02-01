@@ -1,0 +1,46 @@
+name: Publish to Microsoft Store
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: 'preview'
+
+      - name: Install MAUI workloads
+        run: dotnet workload install maui
+
+      - name: Restore
+        run: dotnet restore ControlRoom.App/ControlRoom.App.csproj -p:TargetFramework=net10.0-windows10.0.19041.0
+
+      - name: Build MSIX
+        run: |
+          dotnet publish ControlRoom.App/ControlRoom.App.csproj `
+            --configuration Release `
+            -p:TargetFramework=net10.0-windows10.0.19041.0 `
+            -p:RuntimeIdentifierOverride=win10-x64 `
+            -p:GenerateAppxPackageOnBuild=true `
+            -p:AppxPackageSigningEnabled=false
+
+      - name: Install Microsoft Store CLI
+        run: dotnet tool install -g MSStore.CLI
+
+      - name: Configure Store CLI
+        run: msstore reconfigure --tenantId ${{ secrets.AZURE_TENANT_ID }} --clientId ${{ secrets.AZURE_CLIENT_ID }} --clientSecret ${{ secrets.AZURE_CLIENT_SECRET }} --sellerId ${{ secrets.SELLER_ID }}
+
+      - name: Publish to Store
+        run: |
+          $msix = Get-ChildItem -Path . -Filter "*.msix" -Recurse | Select-Object -First 1
+          msstore publish $msix.FullName
