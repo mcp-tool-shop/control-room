@@ -108,3 +108,44 @@ public class BoolToExpandIconConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotImplementedException();
 }
+
+/// <summary>
+/// Converts non-zero int to true
+/// </summary>
+public class IntToBoolConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is int count)
+            return count > 0;
+        return false;
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
+
+/// <summary>
+/// Converts AI severity string to background color
+/// </summary>
+public class SeverityToColorConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is string severity)
+        {
+            return severity.ToLowerInvariant() switch
+            {
+                "info" => Color.FromArgb("#3B82F6"),      // Blue
+                "warning" => Color.FromArgb("#F59E0B"),   // Amber
+                "error" => Color.FromArgb("#EF4444"),     // Red
+                "critical" => Color.FromArgb("#DC2626"),  // Dark Red
+                _ => Color.FromArgb("#6B7280")            // Gray
+            };
+        }
+        return Color.FromArgb("#6B7280");
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}

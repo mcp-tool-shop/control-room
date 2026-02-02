@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
 using ControlRoom.Application.UseCases;
+using ControlRoom.Domain.Services;
+using ControlRoom.Infrastructure.AI;
 using ControlRoom.Infrastructure.Process;
 using ControlRoom.Infrastructure.Storage;
 using ControlRoom.Infrastructure.Storage.Queries;
@@ -36,6 +38,7 @@ public static class MauiProgram
 
         // Infrastructure
         builder.Services.AddSingleton<IScriptRunner, ScriptRunner>();
+        builder.Services.AddSingleton<IAIAssistant>(sp => new OllamaAIAssistant());
 
         // Queries
         builder.Services.AddSingleton<RunQueries>();

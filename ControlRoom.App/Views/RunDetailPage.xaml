@@ -34,6 +34,15 @@
             <!-- Actions -->
             <HorizontalStackLayout Grid.Column="1" Spacing="8">
                 <Button
+                    Text="🤖 Ask AI"
+                    Command="{Binding AskAICommand}"
+                    FontSize="12"
+                    Padding="10,6"
+                    BackgroundColor="#6366F1"
+                    TextColor="White"
+                    IsVisible="{Binding IsFailed}"
+                    IsEnabled="{Binding IsAIAnalyzing, Converter={StaticResource InvertedBool}}" />
+                <Button
                     Text="📋 Copy"
                     Command="{Binding CopySummaryCommand}"
                     FontSize="12"
@@ -53,8 +62,8 @@
             </HorizontalStackLayout>
         </Grid>
 
-        <!-- Main content - split into log and artifacts when there are artifacts -->
-        <Grid Grid.Row="1" Margin="0,12,0,0" RowDefinitions="*,Auto">
+        <!-- Main content - split into log, AI analysis, and artifacts -->
+        <Grid Grid.Row="1" Margin="0,12,0,0" RowDefinitions="*,Auto,Auto">
             <!-- Log Output -->
             <Border Padding="12" BackgroundColor="#1E1E1E" StrokeShape="RoundRectangle 8">
                 <CollectionView ItemsSource="{Binding Lines}">
@@ -79,9 +88,86 @@
                 </CollectionView>
             </Border>
 
-            <!-- Artifacts Panel -->
+            <!-- AI Analysis Panel -->
             <Border
                 Grid.Row="1"
+                Margin="0,12,0,0"
+                Padding="16"
+                IsVisible="{Binding HasAIAnalysis}"
+                BackgroundColor="{AppThemeBinding Light=#F0F4FF, Dark=#1E293B}"
+                StrokeShape="RoundRectangle 8"
+                Stroke="#6366F1">
+                <VerticalStackLayout Spacing="12">
+                    <!-- Header with AI icon -->
+                    <HorizontalStackLayout Spacing="8">
+                        <Label Text="🤖" FontSize="18" VerticalOptions="Center" />
+                        <Label Text="AI Analysis" FontSize="16" FontAttributes="Bold" VerticalOptions="Center" />
+                        <Label
+                            Text="{Binding AiConfidence, StringFormat='({0:P0} confidence)'}"
+                            FontSize="12"
+                            Opacity="0.7"
+                            VerticalOptions="Center" />
+                        <Border
+                            Padding="6,2"
+                            BackgroundColor="{Binding AiSeverity, Converter={StaticResource SeverityToColor}}"
+                            StrokeShape="RoundRectangle 4"
+                            Stroke="Transparent">
+                            <Label Text="{Binding AiSeverity}" FontSize="11" TextColor="White" />
+                        </Border>
+                    </HorizontalStackLayout>
+
+                    <!-- Summary -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Summary" FontSize="12" FontAttributes="Bold" Opacity="0.8" />
+                        <Label Text="{Binding AiSummary}" FontSize="14" />
+                    </VerticalStackLayout>
+
+                    <!-- Root Cause -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Root Cause" FontSize="12" FontAttributes="Bold" Opacity="0.8" />
+                        <Label Text="{Binding AiRootCause}" FontSize="14" />
+                    </VerticalStackLayout>
+
+                    <!-- Quick Fix (if available) -->
+                    <VerticalStackLayout Spacing="4" IsVisible="{Binding AiQuickFix, Converter={StaticResource StringToBool}}">
+                        <Label Text="💡 Quick Fix" FontSize="12" FontAttributes="Bold" TextColor="#22C55E" />
+                        <Border Padding="12" BackgroundColor="{AppThemeBinding Light=#ECFDF5, Dark=#064E3B}" StrokeShape="RoundRectangle 6">
+                            <Label Text="{Binding AiQuickFix}" FontSize="13" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <!-- Suggestions -->
+                    <VerticalStackLayout Spacing="4" IsVisible="{Binding AISuggestions.Count, Converter={StaticResource IntToBool}}">
+                        <Label Text="Suggestions" FontSize="12" FontAttributes="Bold" Opacity="0.8" />
+                        <CollectionView ItemsSource="{Binding AISuggestions}" HeightRequest="100">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <Label Text="{Binding .}" FontSize="13" Padding="0,2" />
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- AI Analyzing Indicator -->
+            <Border
+                Grid.Row="1"
+                Margin="0,12,0,0"
+                Padding="16"
+                IsVisible="{Binding IsAIAnalyzing}"
+                BackgroundColor="{AppThemeBinding Light=#F0F4FF, Dark=#1E293B}"
+                StrokeShape="RoundRectangle 8"
+                Stroke="#6366F1">
+                <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
+                    <ActivityIndicator IsRunning="True" Color="#6366F1" WidthRequest="24" HeightRequest="24" />
+                    <Label Text="AI is analyzing the error..." FontSize="14" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
+
+            <!-- Artifacts Panel -->
+            <Border
+                Grid.Row="2"
                 Margin="0,12,0,0"
                 Padding="12"
                 IsVisible="{Binding HasArtifacts}"

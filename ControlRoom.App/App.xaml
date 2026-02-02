@@ -18,6 +18,8 @@
             <converters:ErrorToColorConverter x:Key="ErrorToColor" />
             <converters:StringToBoolConverter x:Key="StringToBool" />
             <converters:BoolToExpandIconConverter x:Key="BoolToExpandIcon" />
+            <converters:IntToBoolConverter x:Key="IntToBool" />
+            <converters:SeverityToColorConverter x:Key="SeverityToColor" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

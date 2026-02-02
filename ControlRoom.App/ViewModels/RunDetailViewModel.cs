@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ControlRoom.Application.UseCases;
 using ControlRoom.Domain.Model;
+using ControlRoom.Domain.Services;
 using ControlRoom.Infrastructure.Storage.Queries;
 
 namespace ControlRoom.App.ViewModels;
@@ -13,6 +14,7 @@ public partial class RunDetailViewModel : ObservableObject, IQueryAttributable
 {
     private readonly RunQueries _runs;
     private readonly ArtifactQueries _artifacts;
+    private readonly IAIAssistant? _aiAssistant;
     private CancellationTokenSource? _cts;
     private RunId _runId;
     private long _lastSeq;
@@ -20,11 +22,13 @@ public partial class RunDetailViewModel : ObservableObject, IQueryAttributable
     private RunSummary? _parsedSummary;
     private string _thingName = "";
     private DateTimeOffset _startedAt;
+    private string _errorOutput = "";
 
-    public RunDetailViewModel(RunQueries runs, ArtifactQueries artifacts)
+    public RunDetailViewModel(RunQueries runs, ArtifactQueries artifacts, IAIAssistant? aiAssistant = null)
     {
         _runs = runs;
         _artifacts = artifacts;
+        _aiAssistant = aiAssistant;
     }
 
     [ObservableProperty]
@@ -51,8 +55,36 @@ public partial class RunDetailViewModel : ObservableObject, IQueryAttributable
     [ObservableProperty]
     private string commandLineText = "";
 
+    [ObservableProperty]
+    private bool isFailed;
+
+    [ObservableProperty]
+    private bool isAIAvailable;
+
+    [ObservableProperty]
+    private bool isAIAnalyzing;
+
+    [ObservableProperty]
+    private bool hasAIAnalysis;
+
+    [ObservableProperty]
+    private string aiSummary = "";
+
+    [ObservableProperty]
+    private string aiRootCause = "";
+
+    [ObservableProperty]
+    private string aiSeverity = "";
+
+    [ObservableProperty]
+    private double aiConfidence;
+
+    [ObservableProperty]
+    private string aiQuickFix = "";
+
     public ObservableCollection<LogLine> Lines { get; } = [];
     public ObservableCollection<ArtifactListItem> Artifacts { get; } = [];
+    public ObservableCollection<string> AISuggestions { get; } = [];
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
@@ -99,6 +131,12 @@ public partial class RunDetailViewModel : ObservableObject, IQueryAttributable
                             var line = ExtractLine(e.PayloadJson);
                             var isErr = e.Kind == EventKind.StdErr;
                             Lines.Add(new LogLine(line, isErr, e.At));
+
+                            // Capture error output for AI analysis
+                            if (isErr && !string.IsNullOrWhiteSpace(line))
+                            {
+                                _errorOutput += line + Environment.NewLine;
+                            }
                         }
                         else if (e.Kind == EventKind.RunEnded)
                         {
@@ -107,6 +145,7 @@ public partial class RunDetailViewModel : ObservableObject, IQueryAttributable
                             ParseEndedEvent(e.PayloadJson);
                             LoadArtifacts();
                             LoadSummaryFromDb();
+                            _ = CheckAIAvailabilityAsync();
                         }
                         else if (e.Kind == EventKind.RunStarted)
                         {
@@ -160,6 +199,7 @@ public partial class RunDetailViewModel : ObservableObject, IQueryAttributable
 
             // Extract status
             Status = root.TryGetProperty("status", out var s) ? s.GetString() ?? "Unknown" : "Ended";
+            IsFailed = Status == "Failed";
 
             // Extract duration
             if (root.TryGetProperty("durationMs", out var durationMs))
@@ -211,6 +251,106 @@ public partial class RunDetailViewModel : ObservableObject, IQueryAttributable
     private void StopTailing()
     {
         _cts?.Cancel();
+    }
+
+    /// <summary>
+    /// Ask AI to analyze the error and suggest fixes
+    /// </summary>
+    [RelayCommand]
+    private async Task AskAIAsync()
+    {
+        if (_aiAssistant is null || !IsFailed || IsAIAnalyzing)
+            return;
+
+        IsAIAnalyzing = true;
+        AISuggestions.Clear();
+
+        try
+        {
+            // Check if AI is available
+            var available = await _aiAssistant.IsAvailableAsync();
+            if (!available)
+            {
+                AiSummary = "AI assistant is not available. Ensure Ollama is running.";
+                HasAIAnalysis = true;
+                return;
+            }
+
+            // Build error context
+            var context = new ErrorContext(
+                ErrorOutput: _errorOutput,
+                ExitCode: _parsedSummary?.ExitCode,
+                ScriptPath: _parsedSummary?.CommandLine?.Split(' ').FirstOrDefault(),
+                Arguments: _parsedSummary?.CommandLine,
+                Environment: null,
+                Duration: _parsedSummary?.Duration
+            );
+
+            // Get error explanation
+            var explanation = await _aiAssistant.ExplainErrorAsync(context);
+            AiSummary = explanation.Summary;
+            AiRootCause = explanation.RootCause;
+            AiSeverity = explanation.Severity.ToString();
+            AiConfidence = explanation.Confidence;
+
+            // Get fix suggestions
+            var scriptContent = await TryReadScriptContentAsync();
+            var fixes = await _aiAssistant.SuggestFixAsync(context, scriptContent);
+
+            AiQuickFix = fixes.QuickFix ?? "";
+
+            foreach (var suggestion in fixes.Suggestions.Take(5))
+            {
+                AISuggestions.Add($"• {suggestion.Title}: {suggestion.Description}");
+            }
+
+            HasAIAnalysis = true;
+            Lines.Add(new LogLine("── AI analysis complete ──", false, DateTimeOffset.UtcNow));
+        }
+        catch (Exception ex)
+        {
+            AiSummary = $"AI analysis failed: {ex.Message}";
+            HasAIAnalysis = true;
+        }
+        finally
+        {
+            IsAIAnalyzing = false;
+        }
+    }
+
+    private async Task<string> TryReadScriptContentAsync()
+    {
+        var scriptPath = _parsedSummary?.CommandLine?.Split(' ').FirstOrDefault();
+        if (!string.IsNullOrEmpty(scriptPath) && File.Exists(scriptPath))
+        {
+            try
+            {
+                return await File.ReadAllTextAsync(scriptPath);
+            }
+            catch
+            {
+                // Ignore read errors
+            }
+        }
+        return "";
+    }
+
+    private async Task CheckAIAvailabilityAsync()
+    {
+        if (_aiAssistant is null)
+        {
+            IsAIAvailable = false;
+            return;
+        }
+
+        try
+        {
+            IsAIAvailable = await _aiAssistant.IsAvailableAsync();
+        }
+        catch
+        {
+            IsAIAvailable = false;
+        }
     }
 
     [RelayCommand]
