@@ -54,6 +54,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<RunLocalScript>();
         builder.Services.AddSingleton<IRunbookExecutor, RunbookExecutor>();
         builder.Services.AddSingleton<ITriggerService, TriggerService>();
+        builder.Services.AddSingleton<IRunbookTemplateService, RunbookTemplateService>();
 
         // ViewModels
         builder.Services.AddTransient<TimelineViewModel>();

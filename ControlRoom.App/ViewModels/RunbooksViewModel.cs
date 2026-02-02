@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ControlRoom.Application.Services;
 using ControlRoom.Application.UseCases;
 using ControlRoom.Domain.Model;
 using ControlRoom.Infrastructure.Storage.Queries;
@@ -11,15 +12,19 @@ public partial class RunbooksViewModel : ObservableObject
 {
     private readonly RunbookQueries _runbooks;
     private readonly IRunbookExecutor _executor;
+    private readonly IRunbookTemplateService _templates;
 
-    public RunbooksViewModel(RunbookQueries runbooks, IRunbookExecutor executor)
+    public RunbooksViewModel(RunbookQueries runbooks, IRunbookExecutor executor, IRunbookTemplateService templates)
     {
         _runbooks = runbooks;
         _executor = executor;
+        _templates = templates;
+        LoadTemplates();
     }
 
     public ObservableCollection<RunbookListItemViewModel> Runbooks { get; } = [];
     public ObservableCollection<RunbookExecutionListItem> RecentExecutions { get; } = [];
+    public ObservableCollection<TemplateCategoryViewModel> TemplateCategories { get; } = [];
 
     [ObservableProperty]
     private bool isRefreshing;
@@ -29,6 +34,12 @@ public partial class RunbooksViewModel : ObservableObject
 
     [ObservableProperty]
     private RunbookListItemViewModel? selectedRunbook;
+
+    [ObservableProperty]
+    private bool isTemplatesVisible;
+
+    [ObservableProperty]
+    private RunbookTemplate? selectedTemplate;
 
     [RelayCommand]
     private async Task RefreshAsync()
@@ -127,6 +138,164 @@ public partial class RunbooksViewModel : ObservableObject
         item.IsEnabled = updated.IsEnabled;
         await Task.CompletedTask;
     }
+
+    [RelayCommand]
+    private void ShowTemplates()
+    {
+        IsTemplatesVisible = true;
+    }
+
+    [RelayCommand]
+    private void HideTemplates()
+    {
+        IsTemplatesVisible = false;
+        SelectedTemplate = null;
+    }
+
+    [RelayCommand]
+    private async Task CreateFromTemplateAsync(RunbookTemplate? template)
+    {
+        if (template is null) return;
+
+        string name = await Shell.Current.DisplayPromptAsync(
+            "Create from Template",
+            $"Enter a name for the new runbook based on '{template.Name}':",
+            initialValue: template.Name);
+
+        if (string.IsNullOrWhiteSpace(name)) return;
+
+        try
+        {
+            var runbook = _templates.CreateFromTemplate(template.Id, name);
+            _runbooks.InsertRunbook(runbook);
+
+            IsTemplatesVisible = false;
+            await RefreshAsync();
+
+            // Navigate to edit the new runbook
+            await Shell.Current.GoToAsync($"runbook/edit?runbookId={runbook.Id}");
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Error", $"Failed to create runbook: {ex.Message}", "OK");
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportRunbookAsync(RunbookListItemViewModel? item)
+    {
+        if (item is null) return;
+
+        try
+        {
+            var json = _templates.ExportRunbook(item.RunbookId);
+
+            // Copy to clipboard
+            await Clipboard.SetTextAsync(json);
+
+            await Shell.Current.DisplayAlert(
+                "Exported",
+                $"Runbook '{item.Name}' has been exported to clipboard.\n\nYou can paste this JSON to share or backup the runbook.",
+                "OK");
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Error", $"Failed to export: {ex.Message}", "OK");
+        }
+    }
+
+    [RelayCommand]
+    private async Task ImportRunbookAsync()
+    {
+        string json = await Shell.Current.DisplayPromptAsync(
+            "Import Runbook",
+            "Paste the exported runbook JSON:",
+            maxLength: 100000);
+
+        if (string.IsNullOrWhiteSpace(json)) return;
+
+        try
+        {
+            var result = _templates.ImportRunbook(json);
+
+            if (result.Success)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Imported",
+                    result.WasOverwritten
+                        ? "Runbook was updated successfully."
+                        : "Runbook was imported successfully.",
+                    "OK");
+
+                await RefreshAsync();
+
+                if (result.RunbookId.HasValue)
+                {
+                    await Shell.Current.GoToAsync($"runbook/edit?runbookId={result.RunbookId}");
+                }
+            }
+            else
+            {
+                await Shell.Current.DisplayAlert("Import Failed", result.ErrorMessage ?? "Unknown error", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Error", $"Failed to import: {ex.Message}", "OK");
+        }
+    }
+
+    [RelayCommand]
+    private async Task SaveAsTemplateAsync(RunbookListItemViewModel? item)
+    {
+        if (item is null) return;
+
+        string category = await Shell.Current.DisplayPromptAsync(
+            "Save as Template",
+            "Enter a category for this template (e.g., CI/CD, Backup, Monitoring):",
+            initialValue: "Custom");
+
+        if (string.IsNullOrWhiteSpace(category)) return;
+
+        string description = await Shell.Current.DisplayPromptAsync(
+            "Template Description",
+            "Enter a description for this template:",
+            initialValue: item.Description);
+
+        if (description is null) return;
+
+        try
+        {
+            _templates.SaveAsTemplate(item.RunbookId, category, description, Array.Empty<string>());
+
+            await Shell.Current.DisplayAlert(
+                "Saved",
+                $"'{item.Name}' has been saved as a template in the '{category}' category.",
+                "OK");
+
+            LoadTemplates();
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Error", $"Failed to save template: {ex.Message}", "OK");
+        }
+    }
+
+    private void LoadTemplates()
+    {
+        var templates = _templates.GetTemplates();
+        var categories = templates
+            .GroupBy(t => t.Category)
+            .Select(g => new TemplateCategoryViewModel(g.Key, g.ToList()))
+            .OrderBy(c => c.Name)
+            .ToList();
+
+        TemplateCategories.Clear();
+        foreach (var cat in categories)
+        {
+            TemplateCategories.Add(cat);
+        }
+    }
 }
 
 /// <summary>
@@ -175,5 +344,21 @@ public partial class RunbookListItemViewModel : ObservableObject
         if (diff.TotalDays < 1) return $"{(int)diff.TotalHours}h ago";
         if (diff.TotalDays < 7) return $"{(int)diff.TotalDays}d ago";
         return time.ToString("MMM d");
+    }
+}
+
+/// <summary>
+/// View model for template categories
+/// </summary>
+public sealed class TemplateCategoryViewModel
+{
+    public string Name { get; }
+    public IReadOnlyList<RunbookTemplate> Templates { get; }
+    public int Count => Templates.Count;
+
+    public TemplateCategoryViewModel(string name, IReadOnlyList<RunbookTemplate> templates)
+    {
+        Name = name;
+        Templates = templates;
     }
 }
