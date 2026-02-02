@@ -38,7 +38,7 @@
 		<ApplicationVersion>1</ApplicationVersion>
 
 		<!-- Microsoft Store Packaging Configuration -->
-		<WindowsPackageType>Msix</WindowsPackageType>
+		<WindowsPackageType>MSIX</WindowsPackageType>
 		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
 		<WindowsPackageIdentityName>MikeyFrilot.ControlRoom</WindowsPackageIdentityName>
 		<WindowsPackagePublisherName>CN=mikeyfrilot</WindowsPackagePublisherName>
