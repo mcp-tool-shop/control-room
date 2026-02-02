@@ -21,6 +21,7 @@
             <converters:IntToBoolConverter x:Key="IntToBool" />
             <converters:SeverityToColorConverter x:Key="SeverityToColor" />
             <converters:BoolToGenerateTextConverter x:Key="BoolToGenerateText" />
+            <converters:HistoryToBgColorConverter x:Key="HistoryToBgColor" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

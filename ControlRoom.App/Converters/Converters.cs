@@ -165,3 +165,19 @@ public class BoolToGenerateTextConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotImplementedException();
 }
+
+/// <summary>
+/// Converts IsFromHistory bool to background color for suggestions
+/// </summary>
+public class HistoryToBgColorConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool isFromHistory && isFromHistory)
+            return Color.FromArgb("#3D3D3D"); // Darker for history
+        return Color.FromArgb("#4F46E5"); // Indigo for AI suggestions
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
