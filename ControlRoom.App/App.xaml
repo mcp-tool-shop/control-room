@@ -23,6 +23,9 @@
             <converters:BoolToGenerateTextConverter x:Key="BoolToGenerateText" />
             <converters:HistoryToBgColorConverter x:Key="HistoryToBgColor" />
             <converters:RequiredToStarConverter x:Key="RequiredToStar" />
+            <converters:InvertedBoolConverter x:Key="InverseBool" />
+            <converters:BoolToAutoRefreshTextConverter x:Key="BoolToAutoRefreshText" />
+            <converters:BoolToColorConverter x:Key="BoolToColor" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

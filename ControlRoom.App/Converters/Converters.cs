@@ -197,3 +197,35 @@ public class RequiredToStarConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotImplementedException();
 }
+
+/// <summary>
+/// Converts bool to auto-refresh button text
+/// </summary>
+public class BoolToAutoRefreshTextConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool enabled && enabled)
+            return "Auto: ON";
+        return "Auto: OFF";
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
+
+/// <summary>
+/// Converts bool to color (green for true, gray for false)
+/// </summary>
+public class BoolToColorConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool enabled && enabled)
+            return Color.FromArgb("#4CAF50"); // Green
+        return Color.FromArgb("#9E9E9E"); // Gray
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}

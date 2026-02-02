@@ -8,6 +8,7 @@ using ControlRoom.Infrastructure.Storage;
 using ControlRoom.Infrastructure.Storage.Queries;
 using ControlRoom.App.ViewModels;
 using ControlRoom.App.Views;
+using ControlRoom.App.Pages;
 
 namespace ControlRoom.App;
 
@@ -58,6 +59,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IRunbookTemplateService, RunbookTemplateService>();
         builder.Services.AddSingleton<IAlertEngine, AlertEngine>();
         builder.Services.AddSingleton<ISelfHealingEngine, SelfHealingEngine>();
+        builder.Services.AddSingleton<IHealthCheckService, HealthCheckService>();
 
         // ViewModels
         builder.Services.AddTransient<TimelineViewModel>();
@@ -68,6 +70,7 @@ public static class MauiProgram
         builder.Services.AddTransient<RunbooksViewModel>();
         builder.Services.AddTransient<RunbookDesignerViewModel>();
         builder.Services.AddTransient<DashboardViewModel>();
+        builder.Services.AddTransient<StatusPageViewModel>();
 
         // Command Palette (singleton so state persists across opens)
         builder.Services.AddSingleton<CommandPaletteViewModel>();
@@ -81,6 +84,7 @@ public static class MauiProgram
         builder.Services.AddTransient<RunbooksPage>();
         builder.Services.AddTransient<RunbookDesignerPage>();
         builder.Services.AddTransient<DashboardPage>();
+        builder.Services.AddTransient<StatusPage>();
         builder.Services.AddSingleton<MainHostPage>();
 
 #if DEBUG

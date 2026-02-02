@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ControlRoom.App.ViewModels"
+             x:Class="ControlRoom.App.Pages.StatusPage"
+             x:DataType="vm:StatusPageViewModel"
+             Title="System Status">
+
+    <Grid RowDefinitions="Auto,*" Padding="20">
+        <!-- Header with overall status -->
+        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+            <VerticalStackLayout>
+                <Label Text="System Health" FontSize="28" FontAttributes="Bold" />
+                <HorizontalStackLayout Spacing="10" Margin="0,5,0,0">
+                    <Frame BackgroundColor="{Binding OverallStatusColor}"
+                           CornerRadius="4" Padding="8,4" HasShadow="False">
+                        <Label Text="{Binding OverallStatusText}"
+                               TextColor="White" FontAttributes="Bold" />
+                    </Frame>
+                    <Label Text="{Binding HealthyPercentage, StringFormat='{0:F0}% Healthy'}"
+                           VerticalOptions="Center" TextColor="Gray" />
+                    <Label Text="{Binding LastUpdated, StringFormat='Updated: {0:HH:mm:ss}'}"
+                           VerticalOptions="Center" TextColor="Gray" FontSize="12" />
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+
+            <HorizontalStackLayout Grid.Column="1" Spacing="10" VerticalOptions="Start">
+                <Button Text="{Binding AutoRefreshEnabled, Converter={StaticResource BoolToAutoRefreshText}}"
+                        Command="{Binding ToggleAutoRefreshCommand}"
+                        BackgroundColor="{Binding AutoRefreshEnabled, Converter={StaticResource BoolToColor}}"
+                        TextColor="White" CornerRadius="4" Padding="12,8" />
+                <Button Text="Refresh" Command="{Binding RefreshCommand}"
+                        IsEnabled="{Binding IsRefreshing, Converter={StaticResource InverseBool}}"
+                        BackgroundColor="#2196F3" TextColor="White"
+                        CornerRadius="4" Padding="12,8" />
+            </HorizontalStackLayout>
+        </Grid>
+
+        <!-- Main content -->
+        <ScrollView Grid.Row="1">
+            <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="20">
+
+                <!-- Summary cards -->
+                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="15">
+                    <!-- Healthy -->
+                    <Frame BackgroundColor="#E8F5E9" CornerRadius="8" Padding="15" HasShadow="False">
+                        <VerticalStackLayout>
+                            <Label Text="Healthy" TextColor="#2E7D32" FontSize="14" />
+                            <Label Text="{Binding HealthyCount}" TextColor="#2E7D32"
+                                   FontSize="32" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Degraded -->
+                    <Frame Grid.Column="1" BackgroundColor="#FFF3E0" CornerRadius="8" Padding="15" HasShadow="False">
+                        <VerticalStackLayout>
+                            <Label Text="Degraded" TextColor="#EF6C00" FontSize="14" />
+                            <Label Text="{Binding DegradedCount}" TextColor="#EF6C00"
+                                   FontSize="32" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Unhealthy -->
+                    <Frame Grid.Column="2" BackgroundColor="#FFEBEE" CornerRadius="8" Padding="15" HasShadow="False">
+                        <VerticalStackLayout>
+                            <Label Text="Unhealthy" TextColor="#C62828" FontSize="14" />
+                            <Label Text="{Binding UnhealthyCount}" TextColor="#C62828"
+                                   FontSize="32" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Active Alerts -->
+                    <Frame Grid.Column="3" BackgroundColor="#E3F2FD" CornerRadius="8" Padding="15" HasShadow="False">
+                        <VerticalStackLayout>
+                            <Label Text="Active Alerts" TextColor="#1565C0" FontSize="14" />
+                            <HorizontalStackLayout>
+                                <Label Text="{Binding ActiveAlertCount}" TextColor="#1565C0"
+                                       FontSize="32" FontAttributes="Bold" />
+                                <Label Text="{Binding CriticalAlertCount, StringFormat=' ({0} critical)'}"
+                                       TextColor="#C62828" VerticalOptions="End" Margin="0,0,0,5"
+                                       IsVisible="{Binding CriticalAlertCount, Converter={StaticResource IntToBool}}" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </Frame>
+                </Grid>
+
+                <!-- Health Checks section -->
+                <VerticalStackLayout Grid.Row="1">
+                    <Label Text="Health Checks" FontSize="20" FontAttributes="Bold" Margin="0,0,0,10" />
+
+                    <CollectionView ItemsSource="{Binding HealthChecks}" SelectionMode="None">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:HealthCheckViewModel">
+                                <Frame BackgroundColor="#F5F5F5" CornerRadius="8" Padding="15" HasShadow="False">
+                                    <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="15">
+                                        <!-- Status indicator -->
+                                        <Frame BackgroundColor="{Binding StatusColor}"
+                                               WidthRequest="40" HeightRequest="40"
+                                               CornerRadius="20" Padding="0" HasShadow="False">
+                                            <Label Text="{Binding StatusIcon}"
+                                                   HorizontalOptions="Center" VerticalOptions="Center"
+                                                   TextColor="White" FontSize="18" />
+                                        </Frame>
+
+                                        <!-- Name and message -->
+                                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                                            <Label Text="{Binding Name}" FontSize="16" FontAttributes="Bold" />
+                                            <Label Text="{Binding Message}" FontSize="12" TextColor="Gray"
+                                                   LineBreakMode="TailTruncation" />
+                                        </VerticalStackLayout>
+
+                                        <!-- Response time and last check -->
+                                        <VerticalStackLayout Grid.Column="2" VerticalOptions="Center" HorizontalOptions="End">
+                                            <Label Text="{Binding ResponseTime}" FontSize="14" HorizontalTextAlignment="End" />
+                                            <Label Text="{Binding CheckedAt}" FontSize="11" TextColor="Gray" HorizontalTextAlignment="End" />
+                                        </VerticalStackLayout>
+
+                                        <!-- Run button -->
+                                        <Button Grid.Column="3" Text="Run"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StatusPageViewModel}}, Path=ExecuteHealthCheckCommand}"
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="#E0E0E0" TextColor="#424242"
+                                                CornerRadius="4" Padding="10,5" FontSize="12" />
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                        <CollectionView.EmptyView>
+                            <Label Text="No health checks configured" TextColor="Gray"
+                                   HorizontalOptions="Center" Margin="0,20" />
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+                <!-- Active Alerts section -->
+                <VerticalStackLayout Grid.Row="2">
+                    <Label Text="Active Alerts" FontSize="20" FontAttributes="Bold" Margin="0,0,0,10" />
+
+                    <CollectionView ItemsSource="{Binding ActiveAlerts}" SelectionMode="None">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:StatusAlertViewModel">
+                                <Frame BackgroundColor="#FFF8E1" CornerRadius="8" Padding="15" HasShadow="False"
+                                       BorderColor="{Binding SeverityColor}">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="15">
+                                        <!-- Severity indicator -->
+                                        <Label Text="{Binding SeverityIcon}" FontSize="24" VerticalOptions="Center" />
+
+                                        <!-- Alert details -->
+                                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                                            <HorizontalStackLayout Spacing="8">
+                                                <Label Text="{Binding RuleName}" FontSize="16" FontAttributes="Bold" />
+                                                <Frame BackgroundColor="{Binding SeverityColor}"
+                                                       CornerRadius="3" Padding="6,2" HasShadow="False">
+                                                    <Label Text="{Binding SeverityText}" TextColor="White" FontSize="10" />
+                                                </Frame>
+                                            </HorizontalStackLayout>
+                                            <Label Text="{Binding Message}" FontSize="12" TextColor="Gray"
+                                                   LineBreakMode="TailTruncation" />
+                                            <HorizontalStackLayout Spacing="15" Margin="0,5,0,0">
+                                                <Label Text="{Binding FiredAt, StringFormat='Fired: {0}'}" FontSize="11" TextColor="Gray" />
+                                                <Label Text="{Binding Duration, StringFormat='Duration: {0}'}" FontSize="11" TextColor="Gray" />
+                                            </HorizontalStackLayout>
+                                        </VerticalStackLayout>
+
+                                        <!-- Actions -->
+                                        <HorizontalStackLayout Grid.Column="2" Spacing="8" VerticalOptions="Center">
+                                            <Button Text="Ack"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StatusPageViewModel}}, Path=AcknowledgeAlertCommand}"
+                                                    CommandParameter="{Binding .}"
+                                                    IsVisible="{Binding IsAcknowledged, Converter={StaticResource InverseBool}}"
+                                                    BackgroundColor="#FF9800" TextColor="White"
+                                                    CornerRadius="4" Padding="10,5" FontSize="12" />
+                                            <Button Text="Resolve"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StatusPageViewModel}}, Path=ResolveAlertCommand}"
+                                                    CommandParameter="{Binding .}"
+                                                    BackgroundColor="#4CAF50" TextColor="White"
+                                                    CornerRadius="4" Padding="10,5" FontSize="12" />
+                                        </HorizontalStackLayout>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                        <CollectionView.EmptyView>
+                            <Frame BackgroundColor="#E8F5E9" CornerRadius="8" Padding="20" HasShadow="False">
+                                <Label Text="No active alerts - all systems operational"
+                                       TextColor="#2E7D32" HorizontalOptions="Center" />
+                            </Frame>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+                <!-- Recent Remediations section -->
+                <VerticalStackLayout Grid.Row="3">
+                    <Label Text="Recent Self-Healing Actions" FontSize="20" FontAttributes="Bold" Margin="0,0,0,10" />
+
+                    <CollectionView ItemsSource="{Binding RecentRemediations}" SelectionMode="None">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SelfHealingExecutionViewModel">
+                                <Frame BackgroundColor="#F5F5F5" CornerRadius="8" Padding="15" HasShadow="False">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="15">
+                                        <!-- Status indicator -->
+                                        <Frame BackgroundColor="{Binding StatusColor}"
+                                               WidthRequest="36" HeightRequest="36"
+                                               CornerRadius="18" Padding="0" HasShadow="False">
+                                            <Label Text="{Binding StatusIcon}"
+                                                   HorizontalOptions="Center" VerticalOptions="Center"
+                                                   TextColor="White" FontSize="16" />
+                                        </Frame>
+
+                                        <!-- Execution details -->
+                                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                                            <HorizontalStackLayout Spacing="8">
+                                                <Label Text="{Binding StatusText}" FontSize="14" FontAttributes="Bold" />
+                                                <Label Text="{Binding Result}" FontSize="12" TextColor="Gray"
+                                                       IsVisible="{Binding Result, Converter={StaticResource StringToBool}}" />
+                                            </HorizontalStackLayout>
+                                            <Label Text="{Binding TriggeringAlertId, StringFormat='Triggered by alert: {0}'}"
+                                                   FontSize="11" TextColor="Gray"
+                                                   IsVisible="{Binding HasTriggeringAlert}" />
+                                        </VerticalStackLayout>
+
+                                        <!-- Timing -->
+                                        <VerticalStackLayout Grid.Column="2" VerticalOptions="Center" HorizontalOptions="End">
+                                            <Label Text="{Binding StartedAt}" FontSize="12" HorizontalTextAlignment="End" />
+                                            <Label Text="{Binding Duration}" FontSize="11" TextColor="Gray" HorizontalTextAlignment="End" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                        <CollectionView.EmptyView>
+                            <Label Text="No recent self-healing actions" TextColor="Gray"
+                                   HorizontalOptions="Center" Margin="0,20" />
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Grid>
+        </ScrollView>
+
+        <!-- Loading overlay -->
+        <ActivityIndicator Grid.RowSpan="2" IsRunning="{Binding IsRefreshing}"
+                           IsVisible="{Binding IsRefreshing}"
+                           HorizontalOptions="Center" VerticalOptions="Center"
+                           Color="#2196F3" Scale="1.5" />
+    </Grid>
+</ContentPage>
