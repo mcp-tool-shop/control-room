@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using ControlRoom.Application.UseCases;
+using ControlRoom.Application.Services;
 using ControlRoom.Domain.Services;
 using ControlRoom.Infrastructure.AI;
 using ControlRoom.Infrastructure.Process;
@@ -52,6 +53,7 @@ public static class MauiProgram
         // Use Cases
         builder.Services.AddSingleton<RunLocalScript>();
         builder.Services.AddSingleton<IRunbookExecutor, RunbookExecutor>();
+        builder.Services.AddSingleton<ITriggerService, TriggerService>();
 
         // ViewModels
         builder.Services.AddTransient<TimelineViewModel>();

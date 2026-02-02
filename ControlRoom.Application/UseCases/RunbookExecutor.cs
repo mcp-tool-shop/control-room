@@ -12,6 +12,14 @@ namespace ControlRoom.Application.UseCases;
 public interface IRunbookExecutor
 {
     /// <summary>
+    /// Execute a runbook by ID and return the execution ID
+    /// </summary>
+    Task<RunbookExecutionId> ExecuteAsync(
+        RunbookId runbookId,
+        string? triggerInfo = null,
+        CancellationToken ct = default);
+
+    /// <summary>
     /// Execute a runbook and return the execution ID
     /// </summary>
     Task<RunbookExecutionId> ExecuteAsync(
@@ -107,6 +115,19 @@ public sealed class RunbookExecutor : IRunbookExecutor
         _scriptRunner = scriptRunner;
         _thingQueries = thingQueries;
         _runbookQueries = runbookQueries;
+    }
+
+    public async Task<RunbookExecutionId> ExecuteAsync(
+        RunbookId runbookId,
+        string? triggerInfo = null,
+        CancellationToken ct = default)
+    {
+        var runbook = _runbookQueries.GetRunbook(runbookId);
+        if (runbook is null)
+        {
+            throw new InvalidOperationException($"Runbook not found: {runbookId}");
+        }
+        return await ExecuteAsync(runbook, triggerInfo, ct);
     }
 
     public async Task<RunbookExecutionId> ExecuteAsync(

@@ -5,6 +5,10 @@
     <ProjectReference Include="..\ControlRoom.Infrastructure\ControlRoom.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NCrontab" Version="3.3.3" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
