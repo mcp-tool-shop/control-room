@@ -839,7 +839,14 @@ public enum AuditAction
     Logout,
     SettingsChanged,
     IntegrationConnected,
-    IntegrationDisconnected
+    IntegrationDisconnected,
+    SecretCreated,
+    SecretAccessed,
+    SecretRotated,
+    AccessDenied,
+    TenantBoundaryViolation,
+    WebhookVerified,
+    WebhookRejected
 }
 
 /// <summary>
@@ -962,4 +969,5 @@ public interface IAuditLogRepository
     Task RecordAsync(AuditEntry entry, CancellationToken cancellationToken);
     Task<IReadOnlyList<AuditEntry>> QueryAsync(AuditHistoryQuery query, CancellationToken cancellationToken);
     Task<int> CountAsync(AuditHistoryQuery query, CancellationToken cancellationToken);
+    Task<IReadOnlyList<AuditEntry>> GetEntriesAsync(DateTimeOffset from, DateTimeOffset to, AuditAction[] actions, CancellationToken cancellationToken);
 }
