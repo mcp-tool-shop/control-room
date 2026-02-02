@@ -458,3 +458,158 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at DESC);
+
+-- ============================================================================
+-- INTEGRATION HUB (Phase 5)
+-- ============================================================================
+
+-- Integration definitions (templates/blueprints)
+CREATE TABLE IF NOT EXISTS integrations (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  display_name TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  category TEXT NOT NULL,
+  auth_method TEXT NOT NULL,
+  icon_url TEXT NULL,
+  documentation_url TEXT NULL,
+  is_built_in INTEGER NOT NULL DEFAULT 0,
+  is_enabled INTEGER NOT NULL DEFAULT 1,
+  capabilities_json TEXT NOT NULL DEFAULT '{}',
+  config_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_integrations_category ON integrations(category);
+CREATE INDEX IF NOT EXISTS idx_integrations_enabled ON integrations(is_enabled);
+
+-- Integration instances (connected accounts)
+CREATE TABLE IF NOT EXISTS integration_instances (
+  id TEXT PRIMARY KEY,
+  integration_id TEXT NOT NULL,
+  owner_id TEXT NOT NULL,
+  team_id TEXT NULL,
+  name TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'Pending',
+  health TEXT NOT NULL DEFAULT 'Unknown',
+  configuration_json TEXT NOT NULL DEFAULT '{}',
+  credentials_json TEXT NULL,
+  created_at TEXT NOT NULL,
+  connected_at TEXT NULL,
+  last_sync_at TEXT NULL,
+  last_health_check_at TEXT NULL,
+  last_error TEXT NULL,
+  metadata_json TEXT NULL,
+  FOREIGN KEY (integration_id) REFERENCES integrations(id),
+  FOREIGN KEY (owner_id) REFERENCES users(id),
+  FOREIGN KEY (team_id) REFERENCES teams(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_instances_integration ON integration_instances(integration_id);
+CREATE INDEX IF NOT EXISTS idx_instances_owner ON integration_instances(owner_id);
+CREATE INDEX IF NOT EXISTS idx_instances_team ON integration_instances(team_id);
+CREATE INDEX IF NOT EXISTS idx_instances_status ON integration_instances(status);
+
+-- Webhook endpoints
+CREATE TABLE IF NOT EXISTS webhook_endpoints (
+  id TEXT PRIMARY KEY,
+  instance_id TEXT NOT NULL,
+  url TEXT NOT NULL,
+  secret TEXT NOT NULL,
+  subscribed_events TEXT NOT NULL DEFAULT '[]',
+  is_active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  last_received_at TEXT NULL,
+  total_received INTEGER NOT NULL DEFAULT 0,
+  total_processed INTEGER NOT NULL DEFAULT 0,
+  total_failed INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (instance_id) REFERENCES integration_instances(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_webhooks_instance ON webhook_endpoints(instance_id);
+CREATE INDEX IF NOT EXISTS idx_webhooks_active ON webhook_endpoints(is_active);
+
+-- Webhook events (incoming)
+CREATE TABLE IF NOT EXISTS webhook_events (
+  id TEXT PRIMARY KEY,
+  webhook_id TEXT NOT NULL,
+  instance_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  raw_payload TEXT NOT NULL,
+  headers_json TEXT NOT NULL DEFAULT '{}',
+  received_at TEXT NOT NULL,
+  processed_at TEXT NULL,
+  is_processed INTEGER NOT NULL DEFAULT 0,
+  error TEXT NULL,
+  FOREIGN KEY (webhook_id) REFERENCES webhook_endpoints(id),
+  FOREIGN KEY (instance_id) REFERENCES integration_instances(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_webhook_events_webhook ON webhook_events(webhook_id);
+CREATE INDEX IF NOT EXISTS idx_webhook_events_instance ON webhook_events(instance_id);
+CREATE INDEX IF NOT EXISTS idx_webhook_events_received ON webhook_events(received_at DESC);
+CREATE INDEX IF NOT EXISTS idx_webhook_events_processed ON webhook_events(is_processed);
+
+-- API keys
+CREATE TABLE IF NOT EXISTS api_keys (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  team_id TEXT NULL,
+  name TEXT NOT NULL,
+  key_prefix TEXT NOT NULL,
+  hashed_key TEXT NOT NULL,
+  scopes TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL,
+  expires_at TEXT NULL,
+  last_used_at TEXT NULL,
+  is_active INTEGER NOT NULL DEFAULT 1,
+  allowed_ips TEXT NULL,
+  usage_count INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (owner_id) REFERENCES users(id),
+  FOREIGN KEY (team_id) REFERENCES teams(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_keys_owner ON api_keys(owner_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_team ON api_keys(team_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_prefix ON api_keys(key_prefix);
+CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys(is_active);
+
+-- Sync jobs
+CREATE TABLE IF NOT EXISTS sync_jobs (
+  id TEXT PRIMARY KEY,
+  instance_id TEXT NOT NULL,
+  direction TEXT NOT NULL,
+  resource_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'Pending',
+  started_at TEXT NOT NULL,
+  completed_at TEXT NULL,
+  total_records INTEGER NOT NULL DEFAULT 0,
+  processed_records INTEGER NOT NULL DEFAULT 0,
+  failed_records INTEGER NOT NULL DEFAULT 0,
+  error TEXT NULL,
+  metadata_json TEXT NULL,
+  FOREIGN KEY (instance_id) REFERENCES integration_instances(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sync_jobs_instance ON sync_jobs(instance_id);
+CREATE INDEX IF NOT EXISTS idx_sync_jobs_status ON sync_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_sync_jobs_started ON sync_jobs(started_at DESC);
+
+-- Integration events (audit log)
+CREATE TABLE IF NOT EXISTS integration_events (
+  id TEXT PRIMARY KEY,
+  instance_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  description TEXT NOT NULL,
+  triggered_by TEXT NULL,
+  occurred_at TEXT NOT NULL,
+  data_json TEXT NULL,
+  FOREIGN KEY (instance_id) REFERENCES integration_instances(id),
+  FOREIGN KEY (triggered_by) REFERENCES users(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_integration_events_instance ON integration_events(instance_id);
+CREATE INDEX IF NOT EXISTS idx_integration_events_type ON integration_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_integration_events_occurred ON integration_events(occurred_at DESC);
