@@ -18,6 +18,9 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
+		<!-- Enable XAML source compilation for better performance -->
+		<MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
+
 		<!-- Package metadata -->
 		<Description>Control Room Desktop Application - Local-first script execution and task management with evidence-grade observability, failure fingerprinting, and command palette.</Description>
 		<Authors>mcp-tool-shop</Authors>
